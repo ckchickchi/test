@@ -109,11 +109,9 @@
   </div>
 
   <div class="right">
-    <h3>請輸入你的回答：</h3>
+    <h3>請輸入你的說明：</h3>
     <textarea id="userNote" placeholder="輸入說明..."></textarea>
     <button id="submitNote">送出</button>
-    <p style="font-size: 14px;color:#666;margin-top:10px">
-    </p>
   </div>
 
   <script>
@@ -151,5 +149,84 @@
       tbody.innerHTML = "";
       historyData.forEach(item => {
         const tr = document.createElement("tr");
-        tr.inner
+        tr.innerHTML = `
+          <td>${item.temperature}</td>
+          <td>${item.humidity}</td>
+          <td>${item.drink === 1 ? "是" : "否"}</td>
+          <td>${item.sweatrate}</td>
+          <td>${item.waterloss}</td>
+          <td>${item.bodytemp}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
 
+    document.addEventListener("DOMContentLoaded", async () => {
+      await loadData();
+
+      const tempRange = document.getElementById("temp");
+      const humidRange = document.getElementById("humidity");
+      const drinkSel = document.getElementById("drink");
+      const clearBtn = document.getElementById("clearHistory");
+      const noteBtn = document.getElementById("submitNote");
+
+      // 即時更新顯示數值
+      tempRange.addEventListener("input", () => {
+        document.getElementById("tempVal").textContent = tempRange.value;
+      });
+      humidRange.addEventListener("input", () => {
+        document.getElementById("humidVal").textContent = humidRange.value;
+      });
+
+      document.getElementById("queryBtn").addEventListener("click", () => {
+        const temp = parseInt(tempRange.value, 10);
+        const humidity = parseInt(humidRange.value, 10);
+        const drink = parseInt(drinkSel.value, 10);
+
+        const result = findResult(temp, humidity, drink);
+        if (result) {
+          document.getElementById("sweat").textContent = result.sweatrate;
+          document.getElementById("loss").textContent = result.waterloss;
+          document.getElementById("tempBody").textContent = result.bodytemp;
+
+          updateHistory({
+            temperature: temp,
+            humidity: humidity,
+            drink: drink,
+            sweatrate: result.sweatrate,
+            waterloss: result.waterloss,
+            bodytemp: result.bodytemp
+          });
+        } else {
+          document.getElementById("sweat").textContent = "--";
+          document.getElementById("loss").textContent = "--";
+          document.getElementById("tempBody").textContent = "--";
+          alert("找不到符合條件的資料！");
+        }
+      });
+
+      clearBtn.addEventListener("click", () => {
+        historyData = [];
+        document.querySelector("#historyTable tbody").innerHTML = "";
+      });
+
+      // 送出「說明」
+      noteBtn.addEventListener("click", () => {
+        const note = document.getElementById("userNote").value.trim();
+        if (!note) {
+          alert("請輸入文字再送出");
+          return;
+        }
+        fetch(APP_SCRIPT_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ note: note })
+        })
+        .then(r => r.text())
+        .then(msg => alert("已送出：" + msg))
+        .catch(err => alert("送出失敗：" + err));
+      });
+    });
+  </script>
+</body>
+</html>
