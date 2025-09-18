@@ -109,18 +109,17 @@
   </div>
 
   <div class="right">
-    <h3>請輸入你的說明：</h3>
+    <h3>請輸入你的回答：</h3>
     <textarea id="userNote" placeholder="輸入說明..."></textarea>
     <button id="submitNote">送出</button>
     <p style="font-size: 14px;color:#666;margin-top:10px">
-      ⚠️ 送出功能需要搭配 Google Apps Script Web App，前端無法直接寫入試算表。
     </p>
   </div>
 
   <script>
     const SHEET_URL =
       "https://docs.google.com/spreadsheets/d/1qcMPBbuSB3jvGfhjJaxWnLZMfHq0CNXZn4vebZWpuG4/gviz/tq?tqx=out:csv&sheet=sheet1";
-    const APP_SCRIPT_URL = "在這裡填入你 Apps Script 部署後的 URL";
+    const APP_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxFTLV7C06ZTMSZ3-t6vvLdNnia5uEQO1EfnGCMWmfI2sKwuP6GXzSZZNrUyf8Wt3XMiw/exec";
 
     let data = [];
     let historyData = [];
@@ -153,3 +152,4 @@
       historyData.forEach(item => {
         const tr = document.createElement("tr");
         tr.inner
+
