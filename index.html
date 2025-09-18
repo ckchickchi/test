@@ -9,7 +9,11 @@
       margin: 40px;
       background: #f8f9fa;
       color: #333;
+      display: flex;
+      gap: 40px;
     }
+    .left { flex: 1; }
+    .right { width: 300px; }
     h1 { color: #2c3e50; }
     .control { margin: 20px 0; }
     .result, .history {
@@ -20,7 +24,7 @@
       background: #fff;
     }
     label { display: block; margin-bottom: 5px; }
-    select { padding: 5px; }
+    input[type="range"] { width: 300px; }
     button {
       padding: 8px 18px;
       background: #3498db;
@@ -42,78 +46,85 @@
       text-align: center;
     }
     th { background: #f1f1f1; }
+    textarea {
+      width: 100%;
+      height: 100px;
+      margin-top: 5px;
+      padding: 5px;
+    }
   </style>
 </head>
 <body>
-  <h1>水分流失計算器</h1>
+  <div class="left">
+    <h1>水分流失計算器</h1>
 
-  <!-- 氣溫選單 -->
-  <div class="control">
-    <label for="temp">氣溫：</label>
-    <select id="temp">
-      <option value="20">20 °C</option>
-      <option value="25" selected>25 °C</option>
-      <option value="30">30 °C</option>
-      <option value="35">35 °C</option>
-      <option value="40">40 °C</option>
-    </select>
+    <!-- 氣溫控制桿 -->
+    <div class="control">
+      <label>氣溫：<span id="tempVal">25</span> °C</label>
+      <input type="range" id="temp" min="20" max="40" step="5" value="25">
+    </div>
+
+    <!-- 濕度控制桿 -->
+    <div class="control">
+      <label>相對濕度：<span id="humidVal">40</span> %</label>
+      <input type="range" id="humidity" min="20" max="60" step="20" value="40">
+    </div>
+
+    <!-- 是否喝水 -->
+    <div class="control">
+      <label for="drink">是否喝水：</label>
+      <select id="drink">
+        <option value="1" selected>是</option>
+        <option value="0">否</option>
+      </select>
+    </div>
+
+    <button id="queryBtn">查詢</button>
+
+    <!-- 顯示結果 -->
+    <div class="result" id="result">
+      <p>汗水量：<span id="sweat">--</span></p>
+      <p>水分流失率：<span id="loss">--</span></p>
+      <p>體溫：<span id="tempBody">--</span></p>
+    </div>
+
+    <!-- 歷史紀錄 -->
+    <div class="history">
+      <h3>查詢紀錄（最多 5 筆）</h3>
+      <table id="historyTable">
+        <thead>
+          <tr>
+            <th>氣溫</th>
+            <th>濕度</th>
+            <th>是否喝水</th>
+            <th>汗水量</th>
+            <th>水分流失率</th>
+            <th>體溫</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+      <button id="clearHistory">清除紀錄</button>
+    </div>
   </div>
 
-  <!-- 濕度選單 -->
-  <div class="control">
-    <label for="humidity">相對濕度：</label>
-    <select id="humidity">
-      <option value="20">20 %</option>
-      <option value="40" selected>40 %</option>
-      <option value="60">60 %</option>
-    </select>
-  </div>
-
-  <!-- 是否喝水 -->
-  <div class="control">
-    <label for="drink">是否喝水：</label>
-    <select id="drink">
-      <option value="1" selected>是</option>
-      <option value="0">否</option>
-    </select>
-  </div>
-
-  <button id="queryBtn">查詢</button>
-
-  <!-- 顯示結果 -->
-  <div class="result" id="result">
-    <p>汗水量：<span id="sweat">--</span></p>
-    <p>水分流失率：<span id="loss">--</span></p>
-    <p>體溫：<span id="tempBody">--</span></p>
-  </div>
-
-  <!-- 歷史紀錄 -->
-  <div class="history">
-    <h3>查詢紀錄（最多 5 筆）</h3>
-    <table id="historyTable">
-      <thead>
-        <tr>
-          <th>氣溫</th>
-          <th>濕度</th>
-          <th>是否喝水</th>
-          <th>汗水量</th>
-          <th>水分流失率</th>
-          <th>體溫</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
-    <button id="clearHistory">清除紀錄</button>
+  <div class="right">
+    <h3>請輸入你的說明：</h3>
+    <textarea id="userNote" placeholder="輸入說明..."></textarea>
+    <button id="submitNote">送出</button>
+    <p style="font-size: 14px;color:#666;margin-top:10px">
+      ⚠️ 送出功能需要搭配 Google Apps Script Web App，前端無法直接寫入試算表。
+    </p>
   </div>
 
   <script>
     const SHEET_URL =
       "https://docs.google.com/spreadsheets/d/1qcMPBbuSB3jvGfhjJaxWnLZMfHq0CNXZn4vebZWpuG4/gviz/tq?tqx=out:csv&sheet=sheet1";
+    const APP_SCRIPT_URL = "在這裡填入你 Apps Script 部署後的 URL";
 
     let data = [];
     let historyData = [];
 
-    // 讀取 CSV 並轉換成物件陣列
     async function loadData() {
       const res = await fetch(SHEET_URL);
       const text = await res.text();
@@ -121,14 +132,11 @@
       const headers = rows.shift().map(h => h.replace(/"/g, "").trim());
       data = rows.map(r => {
         const obj = {};
-        headers.forEach((h, i) => {
-          obj[h] = r[i].replace(/"/g, "").trim();
-        });
+        headers.forEach((h, i) => obj[h] = r[i].replace(/"/g, "").trim());
         return obj;
       });
     }
 
-    // 尋找符合條件的資料
     function findResult(temp, humidity, drink) {
       return data.find(row =>
         parseInt(row.temperature, 10) === temp &&
@@ -137,68 +145,11 @@
       );
     }
 
-    // 更新歷史表格
     function updateHistory(record) {
       historyData.unshift(record);
       if (historyData.length > 5) historyData.pop();
-
       const tbody = document.querySelector("#historyTable tbody");
       tbody.innerHTML = "";
       historyData.forEach(item => {
         const tr = document.createElement("tr");
-        tr.innerHTML = `
-          <td>${item.temperature}</td>
-          <td>${item.humidity}</td>
-          <td>${item.drink === 1 ? "是" : "否"}</td>
-          <td>${item.sweatrate}</td>
-          <td>${item.waterloss}</td>
-          <td>${item.bodytemp}</td>
-        `;
-        tbody.appendChild(tr);
-      });
-    }
-
-    document.addEventListener("DOMContentLoaded", async () => {
-      await loadData();
-
-      const tempSel = document.getElementById("temp");
-      const humidSel = document.getElementById("humidity");
-      const drinkSel = document.getElementById("drink");
-      const clearBtn = document.getElementById("clearHistory");
-
-      document.getElementById("queryBtn").addEventListener("click", () => {
-        const temp = parseInt(tempSel.value, 10);
-        const humidity = parseInt(humidSel.value, 10);
-        const drink = parseInt(drinkSel.value, 10);
-
-        const result = findResult(temp, humidity, drink);
-
-        if (result) {
-          document.getElementById("sweat").textContent = result.sweatrate;
-          document.getElementById("loss").textContent = result.waterloss;
-          document.getElementById("tempBody").textContent = result.bodytemp;
-
-          updateHistory({
-            temperature: temp,
-            humidity: humidity,
-            drink: drink,
-            sweatrate: result.sweatrate,
-            waterloss: result.waterloss,
-            bodytemp: result.bodytemp
-          });
-        } else {
-          document.getElementById("sweat").textContent = "--";
-          document.getElementById("loss").textContent = "--";
-          document.getElementById("tempBody").textContent = "--";
-          alert("找不到符合條件的資料！");
-        }
-      });
-
-      clearBtn.addEventListener("click", () => {
-        historyData = [];
-        document.querySelector("#historyTable tbody").innerHTML = "";
-      });
-    });
-  </script>
-</body>
-</html>
+        tr.inner
