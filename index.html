@@ -7,18 +7,29 @@
     body {
       font-family: Arial, sans-serif;
       margin: 40px;
+      background: #f8f9fa;
+      color: #333;
     }
-    h1 { color: #333; }
+    h1 { color: #2c3e50; }
     .control { margin: 20px 0; }
     .result {
       margin-top: 30px;
       padding: 15px;
       border: 1px solid #ccc;
       border-radius: 8px;
-      background: #f9f9f9;
+      background: #fff;
     }
     label { display: block; margin-bottom: 5px; }
     input[type="range"] { width: 300px; }
+    button {
+      padding: 8px 18px;
+      background: #3498db;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    button:hover { background: #2980b9; }
   </style>
 </head>
 <body>
@@ -54,6 +65,7 @@
 
     let data = [];
 
+    // 讀取 CSV 並轉換成物件陣列
     async function loadData() {
       const res = await fetch(SHEET_URL);
       const text = await res.text();
@@ -66,8 +78,8 @@
       });
     }
 
+    // 尋找符合條件的資料
     function findResult(temp, humidity, drink) {
-      // 完全比對
       return data.find(row =>
         parseInt(row.temperature) === temp &&
         parseInt(row.humidity) === humidity &&
@@ -85,7 +97,6 @@
       tempRange.addEventListener("input", () =>
         document.getElementById("tempVal").textContent = tempRange.value
       );
-
       humidRange.addEventListener("input", () =>
         document.getElementById("humidVal").textContent = humidRange.value
       );
@@ -98,9 +109,9 @@
         );
 
         if (result) {
-          document.getElementById("sweat").textContent = result.sweat_rate;
-          document.getElementById("loss").textContent = result.water_loss;
-          document.getElementById("tempBody").textContent = result.body_temp;
+          document.getElementById("sweat").textContent = result.sweatrate;
+          document.getElementById("loss").textContent = result.waterloss;
+          document.getElementById("tempBody").textContent = result.bodytemp;
         } else {
           document.getElementById("sweat").textContent = "--";
           document.getElementById("loss").textContent = "--";
