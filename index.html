@@ -66,26 +66,30 @@
     let data = [];
 
     // 讀取 CSV 並轉換成物件陣列
-    async function loadData() {
-      const res = await fetch(SHEET_URL);
-      const text = await res.text();
-      const rows = text.trim().split("\n").map(r => r.split(","));
-      const headers = rows.shift();
-      data = rows.map(r => {
-        const obj = {};
-        headers.forEach((h, i) => obj[h.trim()] = r[i]);
-        return obj;
-      });
-    }
+async function loadData() {
+  const res = await fetch(SHEET_URL);
+  const text = await res.text();
+  const rows = text.trim().split("\n").map(r => r.split(","));
+  const headers = rows.shift().map(h => h.replace(/"/g, "").trim());
+  data = rows.map(r => {
+    const obj = {};
+    headers.forEach((h, i) => {
+      obj[h] = r[i].replace(/"/g, "").trim();   // 去掉引號與空白
+    });
+    return obj;
+  });
+}
+
 
     // 尋找符合條件的資料
-    function findResult(temp, humidity, drink) {
-      return data.find(row =>
-        parseInt(row.temperature) === temp &&
-        parseInt(row.humidity) === humidity &&
-        parseInt(row.drink) === (drink ? 1 : 0)
-      );
-    }
+function findResult(temp, humidity, drink) {
+  return data.find(row =>
+    parseInt(row.temperature, 10) === temp &&
+    parseInt(row.humidity, 10) === humidity &&
+    parseInt(row.drink, 10) === (drink ? 1 : 0)
+  );
+}
+
 
     document.addEventListener("DOMContentLoaded", async () => {
       await loadData();
@@ -123,3 +127,4 @@
   </script>
 </body>
 </html>
+
